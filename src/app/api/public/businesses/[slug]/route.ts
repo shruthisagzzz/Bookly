@@ -1,0 +1,3 @@
+import { prisma } from '@/lib/prisma';
+import { error, ok } from '@/lib/http';
+export async function GET(_: Request, { params }: { params: Promise<{ slug: string }> }) { const { slug } = await params; const tenant = await prisma.tenant.findUnique({ where: { slug }, include: { services: { where: { status: 'ACTIVE' }, orderBy: { name: 'asc' }, select: { id: true, name: true, description: true, durationMin: true } } } }); if (!tenant?.enabled) return error('Business not found or disabled', 404); return ok({ business: { name: tenant.name, slug: tenant.slug, timezone: tenant.timezone, contactName: tenant.contactName }, services: tenant.services }); }

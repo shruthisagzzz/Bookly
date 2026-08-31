@@ -1,0 +1,5 @@
+import { NextRequest } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { generateSlots } from '@/lib/slots';
+import { error, ok } from '@/lib/http';
+export async function GET(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) { try { const { slug } = await params; const url = new URL(req.url); const date = url.searchParams.get('date'); const serviceId = url.searchParams.get('serviceId'); if (!date || !serviceId) return error('date and serviceId are required'); const tenant = await prisma.tenant.findUnique({ where: { slug }, select: { id: true, name: true, timezone: true, enabled: true } }); if (!tenant?.enabled) return error('Business not found or disabled', 404); const service = await prisma.service.findFirst({ where: { id: serviceId, tenantId: tenant.id, status: 'ACTIVE' }, select: { id: true, name: true, durationMin: true } }); if (!service) return error('Service not found', 404); return ok({ timezone: tenant.timezone, slots: await generateSlots(tenant.id, service.id, date) }); } catch (e) { return error(e instanceof Error ? e.message : 'Unable to load availability', 400); } }

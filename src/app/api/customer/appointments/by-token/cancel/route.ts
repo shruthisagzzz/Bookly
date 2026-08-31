@@ -1,0 +1,4 @@
+import { NextRequest } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { error, ok } from '@/lib/http';
+export async function POST(req: NextRequest, { params }: { params: Promise<{ token: string }> }) { try { const { token } = await params; const { email } = await req.json(); const appointment = await prisma.appointment.findUnique({ where: { bookingToken: token } }); if (!appointment || appointment.customerEmail !== String(email).toLowerCase()) return error('Booking not found', 404); if (appointment.status === 'CANCELLED') return ok({ success: true }); if (appointment.status !== 'CONFIRMED') return error('This booking cannot be cancelled', 409); await prisma.appointment.update({ where: { id: appointment.id }, data: { status: 'CANCELLED' } }); return ok({ success: true }); } catch (e) { return error(e instanceof Error ? e.message : 'Unable to cancel booking', 400); } }
