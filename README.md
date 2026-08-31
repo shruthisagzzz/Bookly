@@ -1,63 +1,72 @@
 # 📅 Bookly — Appointment Booking Platform
 
-Bookly is a full-stack appointment booking platform that allows businesses to manage their services, availability, appointments, and customers through an administrative dashboard.
+Bookly is a full-stack, multi-tenant appointment booking platform. Businesses manage their services, availability, appointments, and customers through an admin dashboard, while customers browse services, pick a time slot, and book appointments through a self-serve customer portal.
 
-Customers can browse available services, select an available time slot, create an account, and book appointments.
+---
+
+## 📖 Table of Contents
+
+- [Features](#-features)
+- [Tech Stack](#️-tech-stack)
+- [Project Structure](#-project-structure)
+- [Getting Started](#-getting-started)
+  1. [Requirements](#1-requirements)
+  2. [Clone the Project](#2-clone-the-project)
+  3. [Install Dependencies](#3-install-dependencies)
+  4. [Set Up the Database](#4-set-up-the-database)
+  5. [Configure Environment Variables](#5-configure-environment-variables)
+  6. [Set Up Prisma](#6-set-up-prisma)
+  7. [Run the Application](#7-run-the-application)
+- [Demo Login Credentials](#-demo-login-credentials)
+- [Testing the Application](#-testing-the-application)
+- [How It Works](#-how-it-works)
+- [Deployment](#-deployment)
+- [Troubleshooting](#-troubleshooting)
+- [Useful Commands](#-useful-commands)
+- [Security Notes](#-security-notes)
+- [Development Workflow](#-development-workflow)
+- [Author](#-author)
 
 ---
 
 ## 🚀 Features
 
 ### 👤 Customer
-
-- Customer registration
-- Customer login
-- Customer authentication
+- Registration, login, and authentication
 - Browse available services
 - View available appointment slots
 - Book appointments
-- View appointment details
-- Customer-specific appointment management
+- View and manage their own appointments
 
 ### 🏢 Business Admin
-
 - Admin authentication
 - Business dashboard
 - Manage services
 - Configure business availability
-- View appointments
-- Manage appointment status
+- View and manage appointment status
 - View customer information
 
 ### 👑 System Owner
-
 - System owner authentication
 - Manage businesses/tenants
 - Manage business administrators
 - Monitor platform-level information
 
 ### 🗄️ Backend
-
 - REST API routes
-- PostgreSQL database
-- Prisma ORM
-- Authentication
+- PostgreSQL database with Prisma ORM
+- Authentication and session management
 - Password hashing
-- Session management
 - Multi-tenant database architecture
 
 ### 🎨 Frontend
-
-- Next.js
-- React
-- TypeScript
+- Next.js + React + TypeScript
 - Responsive UI
-- Customer portal
-- Admin dashboard
+- Separate customer portal and admin dashboard
 
 ---
 
-# 🛠️ Tech Stack
+## 🛠️ Tech Stack
 
 | Technology | Purpose |
 |---|---|
@@ -75,7 +84,7 @@ Customers can browse available services, select an available time slot, create a
 
 ---
 
-# 📁 Project Structure
+## 📁 Project Structure
 
 ```text
 appointment-booking-platform/
@@ -107,692 +116,359 @@ appointment-booking-platform/
 ├── package-lock.json
 ├── prisma.config.ts
 └── README.md
-💻 1. Requirements
+```
+
+Key Prisma models: `Tenant`, `User`, `Service`, `AvailabilityRule`, `Appointment`, plus enums `UserRole`, `ServiceStatus`, `AppointmentStatus`.
+
+---
+
+## 🏁 Getting Started
+
+### 1. Requirements
 
 Before installing the project, make sure you have:
 
-Node.js 18+ installed
-npm installed
-Git installed
-PostgreSQL database
-A GitHub account
-A Neon account if using Neon PostgreSQL
+- Node.js 18+
+- npm
+- Git
+- A PostgreSQL database (local, [Neon](https://neon.tech), or Supabase)
+- A GitHub account
 
-Check Node.js:
+Verify your setup:
 
+```bash
 node --version
-
-Check npm:
-
 npm --version
-
-Check Git:
-
 git --version
-📥 2. Download / Clone the Project
+```
 
-Open a terminal and clone the GitHub repository:
+### 2. Clone the Project
 
+```bash
 git clone YOUR_GITHUB_REPOSITORY_URL
-
-Example:
-
-git clone https://github.com/yourusername/appointment-booking-platform.git
-
-Move into the project:
-
 cd appointment-booking-platform
-
-Open the project in VS Code:
-
 code .
-📦 3. Install Project Libraries
+```
 
-After downloading the project, install all required dependencies.
+### 3. Install Dependencies
 
-Run:
-
+```bash
 npm install
+```
 
-This reads the package.json file and automatically installs the required libraries.
+This reads `package.json` and installs everything the project needs. You don't need to install packages one by one — they're already listed there.
 
-You do NOT need to manually install every package if package.json is already included.
+If Prisma isn't installed for some reason:
 
-📚 4. Install Prisma
-
-If Prisma is not already installed:
-
+```bash
 npm install prisma @prisma/client
-
-For development:
-
 npm install -D prisma
-
-Check Prisma:
-
 npx prisma --version
-🗄️ 5. Create the Database
+```
 
-This project uses PostgreSQL.
+### 4. Set Up the Database
 
-You can use:
+This project uses **PostgreSQL**. You can use:
 
-Neon
-Local PostgreSQL
-Supabase PostgreSQL
-Another PostgreSQL provider
+- [Neon](https://neon.tech) *(recommended for cloud deployment)*
+- Local PostgreSQL
+- Supabase
+- Any other PostgreSQL provider
 
-For cloud deployment, Neon PostgreSQL is recommended.
+#### Using Neon
 
-☁️ 6. Create a Neon Database
-Go to the Neon website.
-Create an account.
-Create a new project.
-Create/select the PostgreSQL database.
-Open the Connect section.
-Copy the PostgreSQL connection string.
+1. Go to [neon.tech](https://neon.tech) and create an account.
+2. Create a new project and PostgreSQL database.
+3. Open the **Connect** section and copy the connection string. It looks like:
 
-It will look similar to:
-
+```text
 postgresql://USERNAME:PASSWORD@HOST/DATABASE?sslmode=require
-🔐 7. Create the Environment File
+```
 
-Inside the project root, create:
+### 5. Configure Environment Variables
 
-.env
+Create a `.env` file in the project root:
 
-Example:
-
-DATABASE_URL="your_neon_database_connection_string"
-
+```env
+DATABASE_URL="your_postgresql_connection_string"
 AUTH_SECRET="your_long_random_secret"
+```
 
-IMPORTANT:
+> ⚠️ **Never commit `.env` to GitHub.** Make sure your `.gitignore` includes:
+> ```text
+> .env
+> .env.local
+> .env.production
+> node_modules/
+> .next/
+> ```
 
-Never upload .env to GitHub.
+Instead, commit a `.env.example` with just the variable names, so other developers know what to fill in:
 
-Your .gitignore should contain:
+```env
+DATABASE_URL=
+AUTH_SECRET=
+```
 
-.env
-.env.local
-.env.production
-node_modules/
-.next/
-🔑 8. Configure DATABASE_URL
+A new developer can then run:
 
-The DATABASE_URL must point to your PostgreSQL database.
+```bash
+copy .env.example .env
+```
 
-Example:
+and fill in the real values.
 
-DATABASE_URL="postgresql://username:password@host/neondb?sslmode=require"
+### 6. Set Up Prisma
 
-The value must match the connection string provided by Neon.
+The schema lives at `prisma/schema.prisma` and connects to your database like this:
 
-Do not use:
-
-DATABASE_URL="postgres://user:pass@localhost:5432/app_dev"
-
-unless you are intentionally using a local PostgreSQL database.
-
-🧬 9. Configure Prisma
-
-The project contains:
-
-prisma/schema.prisma
-
-The schema defines the application's database models.
-
-The main models include:
-
-Tenant
-User
-Service
-AvailabilityRule
-Appointment
-
-The schema also contains enums such as:
-
-UserRole
-ServiceStatus
-AppointmentStatus
-🔄 10. Generate Prisma Client
-
-After installing dependencies and configuring the database, run:
-
-npx prisma generate
-
-This generates the Prisma Client used by the application.
-
-Run this whenever the Prisma schema changes.
-
-🏗️ 11. Create the Database Tables
-
-For a completely new database, run:
-
-npx prisma migrate dev --name init
-
-This will:
-
-Read schema.prisma
-Compare it with the database
-Create a migration
-Apply the migration
-Generate/update Prisma Client
-⚠️ IMPORTANT: Prisma Migration Errors
-
-If Prisma says:
-
-The migration was modified after it was applied.
-
-Do NOT randomly edit the migration file.
-
-For a development database where losing existing data is acceptable:
-
-npx prisma migrate reset
-
-Then confirm the reset.
-
-After that:
-
-npx prisma migrate dev
-
-WARNING:
-
-prisma migrate reset deletes the database data.
-
-Do NOT use it on a production database.
-
-🔍 12. Validate the Prisma Schema
-
-Before starting the application:
-
-npx prisma validate
-
-You should see:
-
-The schema at prisma/schema.prisma is valid
-
-If validation fails, fix schema.prisma before continuing.
-
-🖥️ 13. Open Prisma Studio
-
-You can inspect your database using:
-
-npx prisma studio
-
-Prisma Studio allows you to view tables such as:
-
-Tenant
-User
-Service
-AvailabilityRule
-Appointment
-
-It can be useful for checking whether records are being created correctly.
-
-🌱 14. Seed Demo Data
-
-If the project contains a seed script, run:
-
-npx prisma db seed
-
-If no seed script exists, demo users can be created through the application's registration/admin functionality.
-
-▶️ 15. Run the Application Locally
-
-Start the development server:
-
-npm run dev
-
-You should see something similar to:
-
-Local: http://localhost:3000
-
-Open:
-
-http://localhost:3000
-
-in your browser.
-
-🔐 16. Login
-
-The application contains different types of users.
-
-System Owner
-Email:
-owner@demo.local
-
-Password:
-Owner123!
-Business Admin
-Email:
-admin@acme.local
-
-Password:
-Admin123!
-
-These credentials are only valid if the corresponding demo users exist in your database.
-
-For production, create your own secure credentials.
-
-👤 17. Customer Authentication
-
-Customers use the customer authentication system.
-
-Customer registration creates a customer account.
-
-Customer login uses:
-
-Email
-Password
-
-Passwords should never be stored as plain text.
-
-The application stores password hashes instead.
-
-🧪 18. Test the Application
-
-After starting the application, test the following workflow.
-
-Admin workflow
-Login
- ↓
-Admin Dashboard
- ↓
-Create Service
- ↓
-Configure Availability
- ↓
-View Appointments
-Customer workflow
-Customer Registration
- ↓
-Customer Login
- ↓
-Browse Services
- ↓
-Select Date
- ↓
-Select Available Time
- ↓
-Book Appointment
- ↓
-View Appointment
-🔌 19. How Frontend Connects to Backend
-
-The application uses Next.js API routes.
-
-The frontend sends requests to routes such as:
-
-/api/customer/auth/login
-/api/customer/auth/register
-/api/appointments
-
-The API routes communicate with Prisma.
-
-The overall flow is:
-
-Browser
-   ↓
-Next.js Frontend
-   ↓
-API Route
-   ↓
-Prisma Client
-   ↓
-PostgreSQL / Neon
-🗄️ 20. How Prisma Connects to PostgreSQL
-
-The connection is configured inside:
-
-prisma/schema.prisma
-
-Example:
-
+```prisma
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+```
 
-Prisma reads:
+Generate the Prisma Client (run this any time the schema changes):
 
-DATABASE_URL
+```bash
+npx prisma generate
+```
 
-from the .env file.
+Validate the schema before starting the app:
 
-The connection therefore works like:
+```bash
+npx prisma validate
+```
 
-.env
- ↓
-DATABASE_URL
- ↓
-Prisma
- ↓
-PostgreSQL
- ↓
-Neon
-🔒 21. Environment Variables
+You should see: `The schema at prisma/schema.prisma is valid`.
 
-The application requires environment variables.
+Create the database tables (for a brand-new database):
 
-Example:
+```bash
+npx prisma migrate dev --name init
+```
 
-DATABASE_URL="postgresql://..."
-AUTH_SECRET="..."
+This reads `schema.prisma`, compares it to the database, creates a migration, applies it, and regenerates the Prisma Client.
 
-Never commit secrets to GitHub.
+Optionally, seed demo data if a seed script exists:
 
-Instead, provide a .env.example file.
+```bash
+npx prisma db seed
+```
 
-Create:
+You can inspect your data visually at any time with:
 
-.env.example
+```bash
+npx prisma studio
+```
 
-with:
+> ⚠️ **If Prisma says** *"The migration was modified after it was applied"* — don't hand-edit the migration file. On a development database where losing data is fine:
+> ```bash
+> npx prisma migrate reset
+> npx prisma migrate dev
+> ```
+> `prisma migrate reset` **deletes all data** — never run it against production.
 
-DATABASE_URL=
-AUTH_SECRET=
+### 7. Run the Application
 
-A new developer can then copy it:
+```bash
+npm run dev
+```
 
-copy .env.example .env
+You should see:
 
-and fill in the real values.
+```text
+Local: http://localhost:3000
+```
 
-🐙 22. Upload the Project to GitHub
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-Initialize Git if necessary:
+---
 
-git init
+## 🔐 Demo Login Credentials
 
-Add the files:
+| Role | Email | Password |
+|---|---|---|
+| System Owner | `owner@demo.local` | `Owner123!` |
+| Business Admin | `admin@acme.local` | `Admin123!` |
 
-git add .
+These only work if the corresponding demo users exist in your database. Customers register their own accounts through the customer registration flow. For production, always create your own secure credentials — passwords are stored as hashes, never as plain text.
 
-Commit:
+---
 
-git commit -m "Initial project setup"
+## 🧪 Testing the Application
 
-Create a repository on GitHub.
+**Admin workflow:**
 
-Then connect your local project:
+```text
+Login → Admin Dashboard → Create Service → Configure Availability → View Appointments
+```
 
-git remote add origin YOUR_GITHUB_REPOSITORY_URL
+**Customer workflow:**
 
-Rename the branch:
+```text
+Register → Login → Browse Services → Select Date → Select Time → Book Appointment → View Appointment
+```
 
-git branch -M main
+---
 
-Push:
+## 🔌 How It Works
 
-git push -u origin main
-🚀 23. Deploy to Vercel
+**Frontend → Backend:**
 
-The application can be deployed using Vercel.
+```text
+Browser → Next.js Frontend → API Route → Prisma Client → PostgreSQL / Neon
+```
 
-Step 1
+Example API routes:
 
-Open Vercel and sign in using GitHub.
+```text
+/api/customer/auth/login
+/api/customer/auth/register
+/api/appointments
+```
 
-Step 2
+**Prisma → PostgreSQL:**
 
-Select:
+```text
+.env → DATABASE_URL → Prisma → PostgreSQL → Neon
+```
 
-Add New Project
-Step 3
+---
 
-Import your GitHub repository.
+## 🚀 Deployment
 
-Step 4
+### Deploy to Vercel
 
-Vercel detects the Next.js project automatically.
+1. Open [Vercel](https://vercel.com) and sign in with GitHub.
+2. Click **Add New Project**.
+3. Import your GitHub repository — Vercel auto-detects the Next.js project.
+4. Go to **Project → Settings → Environment Variables** and add:
+   - `DATABASE_URL` (production Neon connection string)
+   - `AUTH_SECRET`
 
-Step 5
+Production architecture:
 
-Add environment variables.
+```text
+User → Vercel → Next.js → Prisma → Neon PostgreSQL
+```
 
-Go to:
+Make sure `DATABASE_URL` in Vercel points to your **production** Neon database, not your local one.
 
-Project
-→ Settings
-→ Environment Variables
+### Deploy Database Migrations
 
-Add:
+Before using the production app, apply existing migrations to the production database:
 
-DATABASE_URL
-
-and:
-
-AUTH_SECRET
-
-Use the production Neon database connection string.
-
-🗄️ 24. Connect Vercel to Neon
-
-The production architecture is:
-
-User
-  ↓
-Vercel
-  ↓
-Next.js
-  ↓
-Prisma
-  ↓
-Neon PostgreSQL
-
-Make sure the DATABASE_URL in Vercel points to the correct Neon database.
-
-Do not use your local development database connection.
-
-🔄 25. Deploy Database Migrations
-
-Before using the production application, make sure the production database contains the required tables.
-
-For production migration deployment:
-
+```bash
 npx prisma migrate deploy
+```
 
-This applies existing migrations without creating new development migrations.
+### Redeploy After Environment Variable Changes
 
-🔁 26. Redeploy After Environment Variable Changes
+Whenever you change an environment variable in Vercel, trigger a new deployment — either click **Redeploy**, or push a new commit:
 
-Whenever an environment variable is changed in Vercel, create a new deployment.
-
-You can either:
-
-Click Redeploy in Vercel
-Push a new commit to GitHub
-
-Example:
-
+```bash
 git add .
 git commit -m "Update environment configuration"
 git push
+```
 
-Vercel will automatically build and deploy the latest commit.
+### Test the Production Build Locally
 
-🧱 27. Production Build
-
-Before deployment, test the production build locally:
-
+```bash
 npm run build
-
-If the build succeeds:
-
-✓ Build successful
-
-then start the production server:
-
 npm start
-🐛 28. Troubleshooting
-Prisma Client does not contain a model
+```
 
-Example:
+---
 
+## 🐛 Troubleshooting
+
+**Prisma Client is missing a model**
+```text
 Property 'customer' does not exist on type 'PrismaClient'
+```
+Check the model exists in `prisma/schema.prisma`, then run `npx prisma generate`. If the database also needs updating, run `npx prisma migrate dev`.
 
-Check whether the model exists in:
-
-prisma/schema.prisma
-
-Then run:
-
-npx prisma generate
-
-If the database also needs updating:
-
-npx prisma migrate dev
-Database column does not exist
-
-Example:
-
+**Database column doesn't exist**
+```text
 The column `Appointment.customerId` does not exist
+```
+Your schema and database are out of sync. Run `npx prisma migrate dev`, or on a disposable dev database: `npx prisma migrate reset` followed by `npx prisma generate`.
 
-This usually means the Prisma schema and database structure are different.
-
-Run:
-
-npx prisma migrate dev
-
-For a development database that can be completely recreated:
-
-npx prisma migrate reset
-
-Then:
-
-npx prisma generate
-Cannot reach database server
-
-Example:
-
+**Cannot reach database server**
+```text
 P1001: Can't reach database server
+```
+Check that:
+- `DATABASE_URL` is correct
+- The Neon database is available
+- `sslmode=require` is present where required
+- You're using the correct Neon branch
+- Your `.env` file is in the project root
 
-Check:
-
-DATABASE_URL
-
-Make sure:
-
-Neon database is available
-Connection string is correct
-sslmode=require is present when required
-You are using the correct Neon branch
-Your .env file is in the project root
-Zero-length key is not supported
-
-If authentication displays:
-
-Zero-length key is not supported
-
-check:
-
-AUTH_SECRET=
-
-Make sure AUTH_SECRET has a real value.
-
-For example:
-
+**"Zero-length key is not supported"**
+Your `AUTH_SECRET` is empty. Set it to a real value in both `.env` and Vercel:
+```env
 AUTH_SECRET="a-long-random-secret-value"
+```
 
-Do not leave it empty.
+---
 
-Also make sure the same variable is configured in Vercel.
+## 📋 Useful Commands
 
-📋 29. Complete Setup From Scratch
+| Command | Description |
+|---|---|
+| `npm install` | Install dependencies |
+| `npm run dev` | Run development server |
+| `npm run build` | Build the application |
+| `npm start` | Start production server |
+| `npx prisma validate` | Validate the Prisma schema |
+| `npx prisma generate` | Generate Prisma Client |
+| `npx prisma migrate dev --name migration_name` | Create a migration |
+| `npx prisma migrate deploy` | Apply migrations in production |
+| `npx prisma migrate reset` | Reset the development database |
+| `npx prisma studio` | Open Prisma Studio |
 
-A new developer can follow these commands:
+---
 
-git clone YOUR_GITHUB_REPOSITORY_URL
+## 🔒 Security Notes
 
-cd appointment-booking-platform
+- Never commit `.env`, `.env.local`, or `.env.production`.
+- Never expose `DATABASE_URL`, `AUTH_SECRET`, database passwords, API keys, or other credentials.
+- Always use environment variables for secrets.
+- Use strong, unique passwords and secrets in production.
 
-npm install
+---
 
-npx prisma generate
+## 🔄 Development Workflow
 
-npx prisma validate
-
-npx prisma migrate dev --name init
-
-npm run dev
-
-Then open:
-
-http://localhost:3000
-🔄 Complete Development Workflow
-
-Whenever you make changes:
-
+```text
 1. Modify code
-       ↓
-2. Modify Prisma schema if required
-       ↓
-3. Create migration
-       ↓
+2. Modify Prisma schema (if required)
+3. Create a migration
 4. Generate Prisma Client
-       ↓
 5. Test locally
-       ↓
 6. git add .
-       ↓
 7. git commit
-       ↓
 8. git push
-       ↓
 9. Vercel automatically deploys
+```
 
-For Prisma changes:
+For schema changes specifically:
 
+```bash
 npx prisma migrate dev --name describe_your_change
 npx prisma generate
-
-Then:
 
 git add .
 git commit -m "Update database schema"
 git push
-🔐 Security Notes
+```
 
-Never commit:
+---
 
-.env
-.env.local
-.env.production
+## 👨‍💻 Author
 
-Never expose:
-
-DATABASE_URL
-AUTH_SECRET
-database passwords
-API keys
-private credentials
-
-Use environment variables for secrets.
-
-For production, always use strong passwords and secrets.
-
-📌 Useful Commands
-Install dependencies
-npm install
-Run development server
-npm run dev
-Build application
-npm run build
-Start production server
-npm start
-Validate Prisma
-npx prisma validate
-Generate Prisma Client
-npx prisma generate
-Create migration
-npx prisma migrate dev --name migration_name
-Apply production migrations
-npx prisma migrate deploy
-Reset development database
-npx prisma migrate reset
-Open Prisma Studio
-npx prisma studio
-👨‍💻 Author
-
-Developed as a full-stack appointment booking platform using Next.js, TypeScript, Prisma, PostgreSQL, Neon and Vercel.
+Developed as a full-stack appointment booking platform using **Next.js**, **TypeScript**, **Prisma**, **PostgreSQL**, **Neon**, and **Vercel**.
