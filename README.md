@@ -1,237 +1,798 @@
-# Bookly — B2B Appointment Booking Platform
+# 📅 Bookly — Appointment Booking Platform
 
-A complete take-home implementation for the Hanabi Technologies B2B Appointment Booking Platform assignment. The implementation is intentionally focused on one coherent end-to-end journey: System Owner onboarding → Business Admin configuration → public customer booking → admin appointment management.
+Bookly is a full-stack appointment booking platform that allows businesses to manage their services, availability, appointments, and customers through an administrative dashboard.
 
-The assignment asks for multi-tenancy, server-side authorization, availability-derived slots, conflict protection, validation, tests, responsive UI, a README, a Vercel deployment and implementation/final walkthrough recordings. This repository covers the application and engineering artifacts; deployment/video links are environment-specific and must be added after deployment/recording. See the original assignment for the submission checklist.
+Customers can browse available services, select an available time slot, create an account, and book appointments.
 
-## Stack
+---
 
-- Next.js 15 + React 19 + TypeScript
-- PostgreSQL + Prisma
-- JWT session in an HTTP-only cookie
-- Zod validation
-- Luxon for timezone-aware slot generation
-- Vitest for booking business-logic tests
-- Plain CSS for a dependency-light responsive UI
+## 🚀 Features
 
-## Local setup
+### 👤 Customer
 
-1. Install Node.js 20+.
-2. Start PostgreSQL:
+- Customer registration
+- Customer login
+- Customer authentication
+- Browse available services
+- View available appointment slots
+- Book appointments
+- View appointment details
+- Customer-specific appointment management
 
-```bash
-docker compose up -d
-```
+### 🏢 Business Admin
 
-3. Copy environment variables:
+- Admin authentication
+- Business dashboard
+- Manage services
+- Configure business availability
+- View appointments
+- Manage appointment status
+- View customer information
 
-```bash
-cp .env.example .env
-```
+### 👑 System Owner
 
-4. Install packages:
+- System owner authentication
+- Manage businesses/tenants
+- Manage business administrators
+- Monitor platform-level information
 
-```bash
-npm install
-```
+### 🗄️ Backend
 
-5. Apply the database migration and generate Prisma Client:
+- REST API routes
+- PostgreSQL database
+- Prisma ORM
+- Authentication
+- Password hashing
+- Session management
+- Multi-tenant database architecture
 
-```bash
-npx prisma migrate dev
-npx prisma generate
-```
+### 🎨 Frontend
 
-6. Seed the demo accounts/data:
+- Next.js
+- React
+- TypeScript
+- Responsive UI
+- Customer portal
+- Admin dashboard
 
-```bash
-npm run db:seed
-```
+---
 
-7. Start the app:
+# 🛠️ Tech Stack
 
-```bash
-npm run dev
-```
+| Technology | Purpose |
+|---|---|
+| Next.js | Frontend + API |
+| React | UI |
+| TypeScript | Type safety |
+| Node.js | Runtime |
+| Prisma | Database ORM |
+| PostgreSQL | Database |
+| Neon | Cloud PostgreSQL |
+| bcrypt | Password hashing |
+| Zod | Input validation |
+| GitHub | Source control |
+| Vercel | Deployment |
 
-Open http://localhost:3000.
+---
 
-## Demo credentials
-
-- System Owner: `owner@demo.local` / `Owner123!`
-- Business Admin: `admin@acme.local` / `Admin123!`
-- Public booking page: `/book/acme-consulting`
-
-For a real deployment, change credentials and use a secret stored in Vercel environment variables. The seeded password values are demo-only.
-
-## Product flow
-
-### 1. System Owner
-
-- Sign in at `/login`.
-- Open the Owner dashboard.
-- Create a business with basic contact information and an initial Business Admin.
-- Enable/disable tenant accounts.
-
-### 2. Business Admin
-
-- Sign in using the onboarded admin account.
-- Maintain the business profile.
-- Create/activate/deactivate services with a duration.
-- Define weekly availability.
-- View and manage appointments.
-- Open the public booking page.
-
-### 3. End Customer
-
-- Visit `/book/{business-slug}`.
-- Select an active service and date.
-- See only valid future slots generated from the tenant's weekly availability.
-- Enter customer details and confirm.
-- Receive a tokenized confirmation page.
-- Use the booking token + email to cancel a confirmed appointment.
-
-## Architecture
-
-This is a single Next.js application with route handlers acting as the backend API. This keeps the take-home easy to run and deploy while maintaining clear boundaries:
+# 📁 Project Structure
 
 ```text
-src/
-  app/                 UI pages + API route handlers
-  components/          shared UI
-  lib/
-    auth.ts             session/authentication
-    booking.ts          pure booking conflict rules
-    slots.ts            timezone-aware slot generation
-    validation.ts       Zod request validation
-    prisma.ts           database client
-prisma/
-  schema.prisma         core data model
-  migrations/           PostgreSQL schema + exclusion constraint
-  seed.ts               reviewer demo data
- tests/
-  booking.test.ts       booking rule tests
-```
+appointment-booking-platform/
+│
+├── prisma/
+│   ├── schema.prisma
+│   └── migrations/
+│
+├── public/
+│
+├── src/
+│   ├── app/
+│   │   ├── api/
+│   │   │   ├── customer/
+│   │   │   ├── admin/
+│   │   │   └── appointments/
+│   │   │
+│   │   ├── customer/
+│   │   ├── admin/
+│   │   └── login/
+│   │
+│   ├── components/
+│   ├── lib/
+│   └── ...
+│
+├── .env
+├── .gitignore
+├── package.json
+├── package-lock.json
+├── prisma.config.ts
+└── README.md
+💻 1. Requirements
 
-## Data model
+Before installing the project, make sure you have:
 
-- **Tenant** — one onboarded business/customer. Holds profile, timezone and enabled status.
-- **User** — System Owner or Business Admin. A Business Admin has exactly one `tenantId`.
-- **Service** — belongs to one tenant and defines name/duration/status.
-- **AvailabilityRule** — weekly day/time window owned by one tenant.
-- **Appointment** — belongs to one tenant and service, stores customer details, UTC start/end, lifecycle status and a unique booking token.
+Node.js 18+ installed
+npm installed
+Git installed
+PostgreSQL database
+A GitHub account
+A Neon account if using Neon PostgreSQL
 
-The implementation intentionally models one shared bookable calendar/resource per tenant. That is a reasonable scope choice because the assignment says staff/resources are only required if the design needs them. If multiple staff calendars were needed, `resourceId` would be added to the appointment and the overlap constraint would be scoped by `(tenantId, resourceId)`.
+Check Node.js:
 
-## Tenant isolation and authorization
+node --version
 
-Authorization is enforced in the backend, not just the UI.
+Check npm:
 
-- Owner APIs call `requireRole(SYSTEM_OWNER)`.
-- Admin APIs call `requireRole(BUSINESS_ADMIN)`.
-- Admin queries always include `tenantId` from the signed session rather than trusting a tenant ID supplied by the browser.
-- Updates/deletes use both the resource ID and session tenant ID (`updateMany/deleteMany`) so a Business Admin cannot mutate another tenant's resource even with a manually crafted request.
-- Public booking endpoints resolve the tenant from the business slug and verify that the selected service belongs to that same tenant.
-- Disabled tenants are rejected by login/admin authorization and public booking endpoints.
+npm --version
 
-The middleware also prevents unauthenticated navigation to `/owner` and `/admin`; the API remains the security boundary.
+Check Git:
 
-## End customer authentication decision
+git --version
+📥 2. Download / Clone the Project
 
-The assignment allows a reasonable choice. End Customers do not need a full account. A successful booking creates a unique opaque `bookingToken`. The confirmation URL contains that token, and cancellation additionally requires the booking email. This gives a low-friction booking experience while avoiding password/account management that is outside the assignment scope.
+Open a terminal and clone the GitHub repository:
 
-For production, the token URL should be treated as a bearer credential, rate-limited, logged carefully and optionally supplemented with an email OTP.
+git clone YOUR_GITHUB_REPOSITORY_URL
 
-## Availability and timezone strategy
+Example:
 
-Each tenant has an IANA timezone, e.g. `Asia/Kolkata`.
+git clone https://github.com/yourusername/appointment-booking-platform.git
 
-- Weekly rules are stored as local wall-clock `HH:mm` values plus `dayOfWeek`.
-- Slot generation interprets those rules in the tenant timezone.
-- Appointment timestamps are stored as PostgreSQL timestamps representing UTC instants.
-- The booking API re-generates the requested day's slots immediately before insertion, so stale browser data is not enough to book an invalid slot.
-- Slots are generated every 15 minutes and only when the entire service duration fits inside an availability rule.
-- Past slots are excluded.
+Move into the project:
 
-## Double-booking strategy
+cd appointment-booking-platform
 
-There are two layers:
+Open the project in VS Code:
 
-1. The API checks current appointments before creating a booking.
-2. PostgreSQL has a **database-level exclusion constraint** using `tstzrange(startAt, endAt, '[)')` scoped to the tenant and active appointment statuses.
+code .
+📦 3. Install Project Libraries
 
-The database constraint is the important concurrency protection: if two requests pass the application-level check at nearly the same time, PostgreSQL still rejects the overlapping insert. Cancelled appointments are excluded from the constraint and therefore stop blocking availability.
-
-## Appointment lifecycle
-
-`CONFIRMED → COMPLETED`
-
-`CONFIRMED → CANCELLED`
-
-`CONFIRMED → NO_SHOW`
-
-Only confirmed appointments can be cancelled by the customer. Admins can update the lifecycle from the dashboard.
-
-## Testing
+After downloading the project, install all required dependencies.
 
 Run:
 
-```bash
-npm test
-```
+npm install
 
-The tests cover:
+This reads the package.json file and automatically installs the required libraries.
 
-- overlapping appointments are rejected;
-- adjacent appointments are allowed;
-- cancelled appointments do not block a slot;
-- unavailable slots are rejected.
+You do NOT need to manually install every package if package.json is already included.
 
-The PostgreSQL exclusion constraint is also part of the production database migration and is the concurrency backstop.
+📚 4. Install Prisma
 
-## Vercel deployment
+If Prisma is not already installed:
 
-1. Create a managed PostgreSQL database (Neon, Supabase, Railway, etc.).
-2. Push the repository to GitHub.
-3. Import the repository into Vercel.
-4. Add `DATABASE_URL`, `AUTH_SECRET` and `NEXT_PUBLIC_APP_URL` as Vercel environment variables.
-5. Run the migration against the production database before first use:
+npm install prisma @prisma/client
 
-```bash
-npx prisma migrate deploy
+For development:
+
+npm install -D prisma
+
+Check Prisma:
+
+npx prisma --version
+🗄️ 5. Create the Database
+
+This project uses PostgreSQL.
+
+You can use:
+
+Neon
+Local PostgreSQL
+Supabase PostgreSQL
+Another PostgreSQL provider
+
+For cloud deployment, Neon PostgreSQL is recommended.
+
+☁️ 6. Create a Neon Database
+Go to the Neon website.
+Create an account.
+Create a new project.
+Create/select the PostgreSQL database.
+Open the Connect section.
+Copy the PostgreSQL connection string.
+
+It will look similar to:
+
+postgresql://USERNAME:PASSWORD@HOST/DATABASE?sslmode=require
+🔐 7. Create the Environment File
+
+Inside the project root, create:
+
+.env
+
+Example:
+
+DATABASE_URL="your_neon_database_connection_string"
+
+AUTH_SECRET="your_long_random_secret"
+
+IMPORTANT:
+
+Never upload .env to GitHub.
+
+Your .gitignore should contain:
+
+.env
+.env.local
+.env.production
+node_modules/
+.next/
+🔑 8. Configure DATABASE_URL
+
+The DATABASE_URL must point to your PostgreSQL database.
+
+Example:
+
+DATABASE_URL="postgresql://username:password@host/neondb?sslmode=require"
+
+The value must match the connection string provided by Neon.
+
+Do not use:
+
+DATABASE_URL="postgres://user:pass@localhost:5432/app_dev"
+
+unless you are intentionally using a local PostgreSQL database.
+
+🧬 9. Configure Prisma
+
+The project contains:
+
+prisma/schema.prisma
+
+The schema defines the application's database models.
+
+The main models include:
+
+Tenant
+User
+Service
+AvailabilityRule
+Appointment
+
+The schema also contains enums such as:
+
+UserRole
+ServiceStatus
+AppointmentStatus
+🔄 10. Generate Prisma Client
+
+After installing dependencies and configuring the database, run:
+
 npx prisma generate
-```
 
-6. Seed only if a demo account is required:
+This generates the Prisma Client used by the application.
 
-```bash
+Run this whenever the Prisma schema changes.
+
+🏗️ 11. Create the Database Tables
+
+For a completely new database, run:
+
+npx prisma migrate dev --name init
+
+This will:
+
+Read schema.prisma
+Compare it with the database
+Create a migration
+Apply the migration
+Generate/update Prisma Client
+⚠️ IMPORTANT: Prisma Migration Errors
+
+If Prisma says:
+
+The migration was modified after it was applied.
+
+Do NOT randomly edit the migration file.
+
+For a development database where losing existing data is acceptable:
+
+npx prisma migrate reset
+
+Then confirm the reset.
+
+After that:
+
+npx prisma migrate dev
+
+WARNING:
+
+prisma migrate reset deletes the database data.
+
+Do NOT use it on a production database.
+
+🔍 12. Validate the Prisma Schema
+
+Before starting the application:
+
+npx prisma validate
+
+You should see:
+
+The schema at prisma/schema.prisma is valid
+
+If validation fails, fix schema.prisma before continuing.
+
+🖥️ 13. Open Prisma Studio
+
+You can inspect your database using:
+
+npx prisma studio
+
+Prisma Studio allows you to view tables such as:
+
+Tenant
+User
+Service
+AvailabilityRule
+Appointment
+
+It can be useful for checking whether records are being created correctly.
+
+🌱 14. Seed Demo Data
+
+If the project contains a seed script, run:
+
 npx prisma db seed
-```
 
-7. Verify `/login`, the Owner flow, an Admin flow and `/book/acme-consulting` (or the created tenant's slug).
+If no seed script exists, demo users can be created through the application's registration/admin functionality.
 
-Add the final Vercel URL and working reviewer credentials to the submission. The implementation and final walkthrough recording links are also intentionally deployment-specific and should be added after recording.
+▶️ 15. Run the Application Locally
 
-## Assumptions and known limitations
+Start the development server:
 
-- One shared calendar/resource per tenant; no individual staff scheduling UI.
-- No payments, email or SMS integrations because the assignment explicitly marks them as not required.
-- End-customer access uses booking token + email rather than a persistent customer account.
-- Admin appointment date filtering is a simple API filter; the UI displays dates in the browser's locale. A production version would use explicit tenant-zone formatting everywhere.
-- Rate limiting, CSRF protection beyond SameSite cookies, audit logs, email verification and password reset are outside the take-home scope.
+npm run dev
 
-## What I would improve with more time
+You should see something similar to:
 
-- Staff/resource calendars and resource-specific availability.
-- Email confirmations and cancellation notifications.
-- Customer OTP authentication and a customer booking history.
-- Stronger rate limiting and security headers.
-- Integration tests against a real PostgreSQL test database, including concurrent booking attempts.
-- More granular appointment filters, pagination and calendar views.
-- Automated deployment checks and observability.
+Local: http://localhost:3000
 
-## Customer Portal
+Open:
 
-Customers have a separate account flow at `/customer/login`. They can register with name, email, phone (optional), and password, or sign in to an existing account. The portal at `/customer` lists all appointments matching the authenticated customer's email, including bookings made before the account was created, and allows cancellation of confirmed appointments. Customer authentication uses a separate HTTP-only `customer_session` cookie and never grants Business Admin or System Owner access.
+http://localhost:3000
 
-After adding the Customer model, run `npx prisma migrate dev --name add_customer_accounts` (or `npm run db:push` for local development) before starting the app.
+in your browser.
+
+🔐 16. Login
+
+The application contains different types of users.
+
+System Owner
+Email:
+owner@demo.local
+
+Password:
+Owner123!
+Business Admin
+Email:
+admin@acme.local
+
+Password:
+Admin123!
+
+These credentials are only valid if the corresponding demo users exist in your database.
+
+For production, create your own secure credentials.
+
+👤 17. Customer Authentication
+
+Customers use the customer authentication system.
+
+Customer registration creates a customer account.
+
+Customer login uses:
+
+Email
+Password
+
+Passwords should never be stored as plain text.
+
+The application stores password hashes instead.
+
+🧪 18. Test the Application
+
+After starting the application, test the following workflow.
+
+Admin workflow
+Login
+ ↓
+Admin Dashboard
+ ↓
+Create Service
+ ↓
+Configure Availability
+ ↓
+View Appointments
+Customer workflow
+Customer Registration
+ ↓
+Customer Login
+ ↓
+Browse Services
+ ↓
+Select Date
+ ↓
+Select Available Time
+ ↓
+Book Appointment
+ ↓
+View Appointment
+🔌 19. How Frontend Connects to Backend
+
+The application uses Next.js API routes.
+
+The frontend sends requests to routes such as:
+
+/api/customer/auth/login
+/api/customer/auth/register
+/api/appointments
+
+The API routes communicate with Prisma.
+
+The overall flow is:
+
+Browser
+   ↓
+Next.js Frontend
+   ↓
+API Route
+   ↓
+Prisma Client
+   ↓
+PostgreSQL / Neon
+🗄️ 20. How Prisma Connects to PostgreSQL
+
+The connection is configured inside:
+
+prisma/schema.prisma
+
+Example:
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+Prisma reads:
+
+DATABASE_URL
+
+from the .env file.
+
+The connection therefore works like:
+
+.env
+ ↓
+DATABASE_URL
+ ↓
+Prisma
+ ↓
+PostgreSQL
+ ↓
+Neon
+🔒 21. Environment Variables
+
+The application requires environment variables.
+
+Example:
+
+DATABASE_URL="postgresql://..."
+AUTH_SECRET="..."
+
+Never commit secrets to GitHub.
+
+Instead, provide a .env.example file.
+
+Create:
+
+.env.example
+
+with:
+
+DATABASE_URL=
+AUTH_SECRET=
+
+A new developer can then copy it:
+
+copy .env.example .env
+
+and fill in the real values.
+
+🐙 22. Upload the Project to GitHub
+
+Initialize Git if necessary:
+
+git init
+
+Add the files:
+
+git add .
+
+Commit:
+
+git commit -m "Initial project setup"
+
+Create a repository on GitHub.
+
+Then connect your local project:
+
+git remote add origin YOUR_GITHUB_REPOSITORY_URL
+
+Rename the branch:
+
+git branch -M main
+
+Push:
+
+git push -u origin main
+🚀 23. Deploy to Vercel
+
+The application can be deployed using Vercel.
+
+Step 1
+
+Open Vercel and sign in using GitHub.
+
+Step 2
+
+Select:
+
+Add New Project
+Step 3
+
+Import your GitHub repository.
+
+Step 4
+
+Vercel detects the Next.js project automatically.
+
+Step 5
+
+Add environment variables.
+
+Go to:
+
+Project
+→ Settings
+→ Environment Variables
+
+Add:
+
+DATABASE_URL
+
+and:
+
+AUTH_SECRET
+
+Use the production Neon database connection string.
+
+🗄️ 24. Connect Vercel to Neon
+
+The production architecture is:
+
+User
+  ↓
+Vercel
+  ↓
+Next.js
+  ↓
+Prisma
+  ↓
+Neon PostgreSQL
+
+Make sure the DATABASE_URL in Vercel points to the correct Neon database.
+
+Do not use your local development database connection.
+
+🔄 25. Deploy Database Migrations
+
+Before using the production application, make sure the production database contains the required tables.
+
+For production migration deployment:
+
+npx prisma migrate deploy
+
+This applies existing migrations without creating new development migrations.
+
+🔁 26. Redeploy After Environment Variable Changes
+
+Whenever an environment variable is changed in Vercel, create a new deployment.
+
+You can either:
+
+Click Redeploy in Vercel
+Push a new commit to GitHub
+
+Example:
+
+git add .
+git commit -m "Update environment configuration"
+git push
+
+Vercel will automatically build and deploy the latest commit.
+
+🧱 27. Production Build
+
+Before deployment, test the production build locally:
+
+npm run build
+
+If the build succeeds:
+
+✓ Build successful
+
+then start the production server:
+
+npm start
+🐛 28. Troubleshooting
+Prisma Client does not contain a model
+
+Example:
+
+Property 'customer' does not exist on type 'PrismaClient'
+
+Check whether the model exists in:
+
+prisma/schema.prisma
+
+Then run:
+
+npx prisma generate
+
+If the database also needs updating:
+
+npx prisma migrate dev
+Database column does not exist
+
+Example:
+
+The column `Appointment.customerId` does not exist
+
+This usually means the Prisma schema and database structure are different.
+
+Run:
+
+npx prisma migrate dev
+
+For a development database that can be completely recreated:
+
+npx prisma migrate reset
+
+Then:
+
+npx prisma generate
+Cannot reach database server
+
+Example:
+
+P1001: Can't reach database server
+
+Check:
+
+DATABASE_URL
+
+Make sure:
+
+Neon database is available
+Connection string is correct
+sslmode=require is present when required
+You are using the correct Neon branch
+Your .env file is in the project root
+Zero-length key is not supported
+
+If authentication displays:
+
+Zero-length key is not supported
+
+check:
+
+AUTH_SECRET=
+
+Make sure AUTH_SECRET has a real value.
+
+For example:
+
+AUTH_SECRET="a-long-random-secret-value"
+
+Do not leave it empty.
+
+Also make sure the same variable is configured in Vercel.
+
+📋 29. Complete Setup From Scratch
+
+A new developer can follow these commands:
+
+git clone YOUR_GITHUB_REPOSITORY_URL
+
+cd appointment-booking-platform
+
+npm install
+
+npx prisma generate
+
+npx prisma validate
+
+npx prisma migrate dev --name init
+
+npm run dev
+
+Then open:
+
+http://localhost:3000
+🔄 Complete Development Workflow
+
+Whenever you make changes:
+
+1. Modify code
+       ↓
+2. Modify Prisma schema if required
+       ↓
+3. Create migration
+       ↓
+4. Generate Prisma Client
+       ↓
+5. Test locally
+       ↓
+6. git add .
+       ↓
+7. git commit
+       ↓
+8. git push
+       ↓
+9. Vercel automatically deploys
+
+For Prisma changes:
+
+npx prisma migrate dev --name describe_your_change
+npx prisma generate
+
+Then:
+
+git add .
+git commit -m "Update database schema"
+git push
+🔐 Security Notes
+
+Never commit:
+
+.env
+.env.local
+.env.production
+
+Never expose:
+
+DATABASE_URL
+AUTH_SECRET
+database passwords
+API keys
+private credentials
+
+Use environment variables for secrets.
+
+For production, always use strong passwords and secrets.
+
+📌 Useful Commands
+Install dependencies
+npm install
+Run development server
+npm run dev
+Build application
+npm run build
+Start production server
+npm start
+Validate Prisma
+npx prisma validate
+Generate Prisma Client
+npx prisma generate
+Create migration
+npx prisma migrate dev --name migration_name
+Apply production migrations
+npx prisma migrate deploy
+Reset development database
+npx prisma migrate reset
+Open Prisma Studio
+npx prisma studio
+👨‍💻 Author
+
+Developed as a full-stack appointment booking platform using Next.js, TypeScript, Prisma, PostgreSQL, Neon and Vercel.
