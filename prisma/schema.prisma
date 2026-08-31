@@ -7,6 +7,108 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Tenant {
+  id           String             @id @default(cuid())
+  name         String
+  slug         String             @unique
+  contactName  String?
+  email        String?
+  phone        String?
+  timezone     String             @default("Asia/Kolkata")
+  enabled      Boolean            @default(true)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  appointments Appointment[]
+  availability AvailabilityRule[]
+  services     Service[]
+  users        User[]
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         UserRole
+  tenantId     String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, role])
+}
+
+model Customer {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  phone        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  appointments Appointment[]
+
+  @@index([email])
+}
+
+model Service {
+  id           String        @id @default(cuid())
+  tenantId     String
+  name         String
+  description  String?
+  durationMin  Int
+  status       ServiceStatus @default(ACTIVE)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  appointments Appointment[]
+  tenant       Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, status])
+}
+
+model AvailabilityRule {
+  id        String   @id @default(cuid())
+  tenantId  String
+  dayOfWeek Int
+  startTime String
+  endTime   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, dayOfWeek])
+}
+
+model Appointment {
+  id            String            @id @default(cuid())
+  tenantId      String
+  serviceId     String
+  customerId    String?
+  customerName  String
+  customerEmail String
+  customerPhone String?
+  startAt       DateTime
+  endAt         DateTime
+  status        AppointmentStatus @default(CONFIRMED)
+  bookingToken  String            @unique @default(cuid())
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  service  Service   @relation(fields: [serviceId], references: [id])
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, startAt])
+  @@index([customerEmail, createdAt])
+  @@index([serviceId, startAt])
+  @@index([customerId])
+}
+
 enum UserRole {
   SYSTEM_OWNER
   BUSINESS_ADMIN
@@ -22,99 +124,4 @@ enum AppointmentStatus {
   COMPLETED
   CANCELLED
   NO_SHOW
-}
-
-model Tenant {
-  id          String              @id @default(cuid())
-  name        String
-  slug        String              @unique
-  contactName String?
-  email       String?
-  phone       String?
-  timezone    String              @default("Asia/Kolkata")
-  enabled     Boolean             @default(true)
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
-  users       User[]
-  services    Service[]
-  availability AvailabilityRule[]
-  appointments Appointment[]
-}
-
-model Customer {
-  id           String        @id @default(cuid())
-  email        String        @unique
-  passwordHash String
-  name         String
-  phone        String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-
-  appointments Appointment[]
-}
-
-model User {
-  id           String    @id @default(cuid())
-  email        String    @unique
-  passwordHash String
-  name         String
-  role         UserRole
-  tenantId     String?
-  tenant       Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-
-  @@index([tenantId, role])
-}
-
-model Service {
-  id          String        @id @default(cuid())
-  tenantId    String
-  tenant      Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  name        String
-  description String?
-  durationMin Int
-  status      ServiceStatus @default(ACTIVE)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-
-  appointments Appointment[]
-  @@index([tenantId, status])
-}
-
-model AvailabilityRule {
-  id        String   @id @default(cuid())
-  tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  dayOfWeek Int
-  startTime String
-  endTime   String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([tenantId, dayOfWeek])
-}
-
-model Appointment {
-  id              String            @id @default(cuid())
-  tenantId        String
-  tenant         Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  serviceId       String
-  service         Service           @relation(fields: [serviceId], references: [id], onDelete: Restrict)
-  customerName    String
-  customerEmail   String
-  customerId      String?
-  customer        Customer?         @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  customerPhone   String?
-  startAt         DateTime
-  endAt           DateTime
-  status          AppointmentStatus @default(CONFIRMED)
-  bookingToken    String            @unique @default(cuid())
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-
-  @@index([tenantId, startAt])
-  @@index([customerEmail, createdAt])
-  @@index([customerId, startAt])
-  @@index([serviceId, startAt])
 }
