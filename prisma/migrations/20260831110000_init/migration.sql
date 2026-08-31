@@ -83,11 +83,16 @@ ALTER TABLE "AvailabilityRule" ADD CONSTRAINT "AvailabilityRule_tenantId_fkey" F
 ALTER TABLE "Appointment" ADD CONSTRAINT "Appointment_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "Appointment" ADD CONSTRAINT "Appointment_serviceId_fkey" FOREIGN KEY ("serviceId") REFERENCES "Service"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
+CREATE EXTENSION IF NOT EXISTS btree_gist;
+
 -- The design uses one shared bookable calendar/resource per tenant.
+
 -- This database-level exclusion constraint closes the race between concurrent bookings.
+
 ALTER TABLE "Appointment"
   ADD CONSTRAINT "Appointment_no_overlap"
   EXCLUDE USING gist (
     "tenantId" WITH =,
     tsrange("startAt", "endAt", '[)') WITH &&
-  ) WHERE ("status" IN ('CONFIRMED', 'COMPLETED', 'NO_SHOW'));
+  )
+  WHERE ("status" IN ('CONFIRMED', 'COMPLETED', 'NO_SHOW'));
