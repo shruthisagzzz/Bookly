@@ -397,4 +397,4 @@ The overlap constraint requires the `btree_gist` extension. Most managed Postgre
 - All tenant-scoped queries filter by `tenantId` at the database layer, not just at the authorization-check layer.
 - `AUTH_SECRET` must be a long, random value in every environment (dev and production) — never left empty or default.
 
-<!-- daily-readme-activity: 2026-09-12 -->
+<!-- daily-readme-activity: 2026-09-13 -->
